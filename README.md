@@ -74,6 +74,42 @@ Stop with `Ctrl+C`, or run detached with `docker compose up --build -d` and stop
 
 Local `dotnet run` / `npm run dev` (above) is unchanged — use Compose when you want the packaged stack.
 
+### Deploy (VPS / any Docker host)
+
+The same Compose stack is what you run on a server: clone, build, detach.
+
+```bash
+git clone https://github.com/p1k4x/fourinrow.git
+cd fourinrow
+docker compose up --build -d
+```
+
+App: `http://<server-ip>:8080`
+
+Update later:
+
+```bash
+git pull
+docker compose up --build -d
+```
+
+Stop with `docker compose down`.
+
+**Production notes**
+
+- **HTTPS** — Compose serves HTTP only. Put TLS in front (Caddy, Traefik, Cloudflare, or host nginx) and proxy to `127.0.0.1:8080`. Keep WebSocket upgrades for `/hubs/` (already set in `frontend/nginx.conf`).
+- **One instance** — rooms are in-memory. Don’t scale `backend` to multiple replicas without sticky sessions + shared state; a restart/redeploy clears games.
+- **Firewall** — open 80/443 (or 8080 if you expose Compose directly). You don’t need to publish the backend port.
+- **Health** — `GET /health` via the frontend proxy.
+
+Example TLS with Caddy on the host (Compose unchanged; Caddy terminates TLS and forwards to port 8080):
+
+```caddy
+play.example.com {
+    reverse_proxy 127.0.0.1:8080
+}
+```
+
 ---
 
 ## What is SignalR?
