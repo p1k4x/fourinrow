@@ -56,6 +56,26 @@ Rooms are in-memory only — restarting the backend clears all games.
 
 ---
 
+## Run with Docker
+
+One command starts both services: ASP.NET Core API + nginx (static SPA + reverse proxy).
+
+**Prerequisites:** [Docker](https://docs.docker.com/get-docker/) with Compose.
+
+```bash
+docker compose up --build
+```
+
+App: **http://localhost:8080**
+
+nginx serves the React build and proxies `/api`, `/hubs`, and `/health` to the backend (WebSockets enabled for SignalR). The SPA is built with an empty `VITE_API_BASE_URL`, so the browser stays same-origin.
+
+Stop with `Ctrl+C`, or run detached with `docker compose up --build -d` and stop with `docker compose down`.
+
+Local `dotnet run` / `npm run dev` (above) is unchanged — use Compose when you want the packaged stack.
+
+---
+
 ## What is SignalR?
 
 **SignalR** is ASP.NET’s real-time library. Clients keep a persistent connection to the server (usually **WebSockets**). Either side can push messages instantly — perfect for turns, board updates, and “opponent joined” events.
@@ -127,7 +147,7 @@ npm install
 npm run dev
 ```
 
-App listens on **http://localhost:5173**. Point `VITE_API_BASE_URL` in `frontend/.env` at the backend (default `http://localhost:5275`). CORS on the backend already allows Vite ports; `vite.config.ts` also proxies `/api`, `/hubs`, and `/health` if you prefer same-origin calls later.
+App listens on **http://localhost:5173**. Point `VITE_API_BASE_URL` in `frontend/.env` at the backend (default `http://localhost:5275`). Leave it empty for same-origin (Vite proxy or Docker nginx). CORS on the backend already allows Vite ports; `vite.config.ts` also proxies `/api`, `/hubs`, and `/health`.
 
 ### Layout
 

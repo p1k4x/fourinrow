@@ -11,15 +11,19 @@ async function readError(response: Response): Promise<string> {
   return `Request failed (${response.status})`
 }
 
+function apiUrl(path: string): string {
+  return API_BASE_URL ? `${API_BASE_URL}${path}` : path
+}
+
 export async function checkHealth(): Promise<boolean> {
-  const response = await fetch(`${API_BASE_URL}/health`)
+  const response = await fetch(apiUrl('/health'))
   return response.ok
 }
 
 export async function createGame(
   request: CreateGameRequest,
 ): Promise<CreateGameResponse> {
-  const response = await fetch(`${API_BASE_URL}/api/games`, {
+  const response = await fetch(apiUrl('/api/games'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(request),
@@ -33,7 +37,7 @@ export async function createGame(
 }
 
 export async function getGame(gameId: string): Promise<GameState> {
-  const response = await fetch(`${API_BASE_URL}/api/games/${encodeURIComponent(gameId)}`)
+  const response = await fetch(apiUrl(`/api/games/${encodeURIComponent(gameId)}`))
 
   if (response.status === 404) {
     throw new Error('Game not found.')
