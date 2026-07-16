@@ -1,0 +1,12 @@
+.vs/
+.idea/
+*.user
+*.suo
+bin/
+obj/
+.DS_Store
+*.swp
+node_modules/
+dist/
+*.local
+frontend/.env

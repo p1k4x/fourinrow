@@ -1,0 +1,13 @@
+@FourInRow.Server_HostAddress = http://localhost:5275
+
+### Health
+GET {{FourInRow.Server_HostAddress}}/health
+
+### Create game
+POST {{FourInRow.Server_HostAddress}}/api/games
+Content-Type: application/json
+
+{
+  "hostName": "Alice",
+  "guestName": "Bob"
+}
