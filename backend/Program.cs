@@ -43,7 +43,12 @@ app.MapPost("/api/games", (CreateGameRequest request, GameStore store) =>
     }
 
     var room = store.Create(request.HostName, request.GuestName);
-    var response = new CreateGameResponse(room.Id, room.HostName, room.GuestName);
+    var response = new CreateGameResponse(
+        room.Id,
+        room.HostName,
+        room.GuestName,
+        room.HostJoinToken,
+        room.GuestJoinToken);
     return Results.Created($"/api/games/{room.Id}", response);
 });
 

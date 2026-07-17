@@ -39,4 +39,12 @@ export type CreateGameResponse = {
   gameId: string
   hostName: string
   guestName: string
+  hostJoinToken: string
+  guestJoinToken: string
+}
+
+/** Returned by SignalR `JoinGame`. */
+export type JoinGameResult = {
+  seat: PlayerSlot
+  peerJoinToken: string
 }

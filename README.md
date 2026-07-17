@@ -48,7 +48,7 @@ Each seat needs its own browser session (two windows of the same browser will sh
 **Guest**
 
 1. Paste the invite link in the second browser / profile
-2. You land on `/g/{gameId}?name={guest}` and join via SignalR
+2. You land on `/g/{gameId}?token={guestJoinToken}` and join via SignalR
 
 When both seats show connected, the 6×7 board appears. Click a column to drop a disc. Turns, wins, and draws update live.
 
@@ -157,11 +157,13 @@ Create body:
 { "hostName": "Alice", "guestName": "Bob" }
 ```
 
+Create response includes `hostJoinToken` and `guestJoinToken` (opaque seat credentials). Invite links use `?token=…`; display names stay labels only.
+
 ### SignalR hub (`/hubs/game`)
 
 | Client → server | Meaning |
 |-----------------|---------|
-| `JoinGame(gameId, playerName)` | Sit as host or guest (name must match) |
+| `JoinGame(gameId, joinToken)` | Sit as host or guest (opaque seat token) |
 | `DropDisc(gameId, column)` | Drop in column `0`–`6` |
 
 | Server → client | Meaning |
@@ -197,10 +199,10 @@ App listens on **http://localhost:5173**. Point `VITE_API_BASE_URL` in `frontend
 | `src/components/WaitingRoom.tsx` | Invite URL → SignalR join / wait / play |
 | `src/components/GameBoard.tsx` | 6×7 board + column drop |
 | `src/hooks/useGameHub.ts` | Hub connect / rejoin / drop / `GameUpdated` |
-| `src/lib/invite.ts` | Invite paths `/g/{id}?name=…` |
+| `src/lib/invite.ts` | Invite paths `/g/{id}?token=…` |
 
-**Lobby:** enter your name and opponent’s → create room → host lands on `/g/{gameId}?name={host}` with a copyable guest invite link.
+**Lobby:** enter your name and opponent’s → create room → host lands on `/g/{gameId}?token={hostJoinToken}` with a copyable guest invite link (guest token from `JoinGame`).
 
-**Join:** opening `/g/{gameId}?name=…` connects to SignalR, calls `JoinGame`, shows seat status until both players are connected (reconnect re-claims the seat).
+**Join:** opening `/g/{gameId}?token=…` connects to SignalR, calls `JoinGame`, shows seat status until both players are connected (reconnect re-claims the seat). Display names are labels only; seat access is the join token.
 
 **Play:** once both are in, the 6×7 board appears — click a column to `DropDisc`; turn, win, draw, and wait-for-opponent states update live via `GameUpdated`.

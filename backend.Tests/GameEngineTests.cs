@@ -183,6 +183,8 @@ public class GameEngineTests
             Id = "test-game",
             HostName = "Alice",
             GuestName = "Bob",
+            HostJoinToken = "host-token",
+            GuestJoinToken = "guest-token",
             Status = status,
             CurrentTurn = PlayerSlot.Host,
         };

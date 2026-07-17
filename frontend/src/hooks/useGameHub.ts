@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { HubConnection } from '@microsoft/signalr'
 import { createGameHub, dropDisc as hubDropDisc, joinGame, startHub } from '../api/hub'
-import type { GameState } from '../types/game'
+import type { GameState, JoinGameResult, PlayerSlot } from '../types/game'
 
 export type HubStatus =
   | 'idle'
@@ -12,6 +12,8 @@ export type HubStatus =
 
 export type UseGameHubResult = {
   game: GameState | null
+  seat: PlayerSlot
+  peerJoinToken: string | null
   status: HubStatus
   error: string | null
   dropDisc: (column: number) => Promise<void>
@@ -19,26 +21,34 @@ export type UseGameHubResult = {
 }
 
 /**
- * Connect to `/hubs/game`, call `JoinGame`, and keep the seat across reconnects.
- * Disabled until `enabled` is true (e.g. after a non-empty player name is known).
+ * Connect to `/hubs/game`, call `JoinGame` with a seat token, and keep the seat across reconnects.
+ * Disabled until `enabled` is true (e.g. after a non-empty join token is known).
  */
 export function useGameHub(
   gameId: string,
-  playerName: string,
+  joinToken: string,
   enabled: boolean,
 ): UseGameHubResult {
   const [game, setGame] = useState<GameState | null>(null)
+  const [seat, setSeat] = useState<PlayerSlot>('None')
+  const [peerJoinToken, setPeerJoinToken] = useState<string | null>(null)
   const [status, setStatus] = useState<HubStatus>('idle')
   const [error, setError] = useState<string | null>(null)
   const connectionRef = useRef<HubConnection | null>(null)
 
   useEffect(() => {
-    if (!enabled || !gameId || !playerName) {
+    if (!enabled || !gameId || !joinToken) {
       setStatus('idle')
       return
     }
 
     let cancelled = false
+
+    const applyJoin = (result: JoinGameResult | null) => {
+      if (!result || cancelled) return
+      setSeat(result.seat)
+      setPeerJoinToken(result.peerJoinToken)
+    }
 
     const connection = createGameHub({
       onGameUpdated: (state) => {
@@ -56,11 +66,13 @@ export function useGameHub(
         if (cancelled) return
         setStatus('connected')
         // New connection id — re-claim the seat.
-        void joinGame(connection, gameId, playerName).catch((err: unknown) => {
-          if (!cancelled) {
-            setError(err instanceof Error ? err.message : 'Could not rejoin.')
-          }
-        })
+        void joinGame(connection, gameId, joinToken)
+          .then(applyJoin)
+          .catch((err: unknown) => {
+            if (!cancelled) {
+              setError(err instanceof Error ? err.message : 'Could not rejoin.')
+            }
+          })
       },
       onClose: () => {
         if (!cancelled) setStatus('disconnected')
@@ -71,13 +83,21 @@ export function useGameHub(
     setStatus('connecting')
     setError(null)
     setGame(null)
+    setSeat('None')
+    setPeerJoinToken(null)
 
     void (async () => {
       try {
         await startHub(connection)
         if (cancelled) return
-        await joinGame(connection, gameId, playerName)
-        if (!cancelled) setStatus('connected')
+        const result = await joinGame(connection, gameId, joinToken)
+        if (cancelled) return
+        if (!result) {
+          setStatus('disconnected')
+          return
+        }
+        applyJoin(result)
+        setStatus('connected')
       } catch (err) {
         if (!cancelled) {
           setError(err instanceof Error ? err.message : 'Could not connect.')
@@ -91,7 +111,7 @@ export function useGameHub(
       connectionRef.current = null
       void connection.stop()
     }
-  }, [gameId, playerName, enabled])
+  }, [gameId, joinToken, enabled])
 
   const dropDisc = useCallback(async (column: number) => {
     const connection = connectionRef.current
@@ -108,5 +128,5 @@ export function useGameHub(
 
   const clearError = useCallback(() => setError(null), [])
 
-  return { game, status, error, dropDisc, clearError }
+  return { game, seat, peerJoinToken, status, error, dropDisc, clearError }
 }

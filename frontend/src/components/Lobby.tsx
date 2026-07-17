@@ -3,7 +3,7 @@ import type { FormEvent } from 'react'
 import { createGame } from '../api/games'
 
 type LobbyProps = {
-  onCreated: (gameId: string, hostName: string, guestName: string) => void
+  onCreated: (gameId: string, hostJoinToken: string) => void
 }
 
 export function Lobby({ onCreated }: LobbyProps) {
@@ -32,7 +32,7 @@ export function Lobby({ onCreated }: LobbyProps) {
     setSubmitting(true)
     try {
       const game = await createGame({ hostName: host, guestName: guest })
-      onCreated(game.gameId, game.hostName, game.guestName)
+      onCreated(game.gameId, game.hostJoinToken)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not create game.')
     } finally {

@@ -5,16 +5,9 @@ export const COLS = 7
 
 type GameBoardProps = {
   game: GameState
-  playerName: string
+  seat: PlayerSlot
   onDrop: (column: number) => void
   disabled?: boolean
-}
-
-function mySlot(game: GameState, playerName: string): PlayerSlot {
-  const name = playerName.trim().toLowerCase()
-  if (name === game.hostName.toLowerCase()) return 'Host'
-  if (name === game.guestName.toLowerCase()) return 'Guest'
-  return 'None'
 }
 
 function cellAt(board: number[], row: number, col: number): number {
@@ -74,16 +67,15 @@ function statusMessage(
 
 export function GameBoard({
   game,
-  playerName,
+  seat,
   onDrop,
   disabled = false,
 }: GameBoardProps) {
-  const slot = mySlot(game, playerName)
-  const { title, detail } = statusMessage(game, slot)
+  const { title, detail } = statusMessage(game, seat)
   const canPlay =
     !disabled &&
     game.status === 'InProgress' &&
-    game.currentTurn === slot
+    game.currentTurn === seat
 
   // Display top row first; storage has row 0 at the bottom.
   const displayRows = Array.from({ length: ROWS }, (_, i) => ROWS - 1 - i)
@@ -105,7 +97,7 @@ export function GameBoard({
         >
           <span className="disc disc--host disc--sm" />
           {game.hostName}
-          {slot === 'Host' ? ' (you)' : ''}
+          {seat === 'Host' ? ' (you)' : ''}
         </span>
         <span
           className={`player-chip player-chip--guest${
@@ -116,7 +108,7 @@ export function GameBoard({
         >
           <span className="disc disc--guest disc--sm" />
           {game.guestName}
-          {slot === 'Guest' ? ' (you)' : ''}
+          {seat === 'Guest' ? ' (you)' : ''}
         </span>
       </div>
 

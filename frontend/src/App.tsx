@@ -6,12 +6,12 @@ import './App.css'
 
 type Route =
   | { kind: 'lobby' }
-  | { kind: 'game'; gameId: string; playerName: string }
+  | { kind: 'game'; gameId: string; joinToken: string }
 
 function readRoute(): Route {
   const parsed = parseGameRoute(window.location.pathname, window.location.search)
   if (parsed) {
-    return { kind: 'game', gameId: parsed.gameId, playerName: parsed.playerName }
+    return { kind: 'game', gameId: parsed.gameId, joinToken: parsed.joinToken }
   }
   return { kind: 'lobby' }
 }
@@ -34,8 +34,8 @@ export default function App() {
     navigate('/')
   }, [])
 
-  const handleCreated = useCallback((gameId: string, hostName: string) => {
-    navigate(gamePath(gameId, hostName))
+  const handleCreated = useCallback((gameId: string, hostJoinToken: string) => {
+    navigate(gamePath(gameId, hostJoinToken))
   }, [])
 
   return (
@@ -46,7 +46,7 @@ export default function App() {
       ) : (
         <WaitingRoom
           gameId={route.gameId}
-          playerName={route.playerName}
+          joinToken={route.joinToken}
           onBack={goLobby}
         />
       )}

@@ -13,6 +13,6 @@ Requires the backend on `http://localhost:5275` (see root `README.md`). Configur
 
 1. Open http://localhost:5173
 2. Enter your name + opponent name → **Create invite**
-3. Host lands on `/g/{gameId}?name={host}` — SignalR joins automatically; copy the guest link
-4. Guest opens `/g/{gameId}?name={guest}` — joins the same hub; both see seat status until connected
+3. Host lands on `/g/{gameId}?token={hostJoinToken}` — SignalR joins automatically; copy the guest link
+4. Guest opens `/g/{gameId}?token={guestJoinToken}` — joins the same hub; both see seat status until connected
 5. When both are connected the board appears — click a column on your turn to drop a disc

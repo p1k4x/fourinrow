@@ -14,7 +14,9 @@ public sealed class GameStore
         {
             Id = id,
             HostName = hostName.Trim(),
-            GuestName = guestName.Trim()
+            GuestName = guestName.Trim(),
+            HostJoinToken = GenerateToken(),
+            GuestJoinToken = GenerateToken()
         };
 
         if (!_games.TryAdd(id, room))
@@ -36,4 +38,7 @@ public sealed class GameStore
 
     private static string GenerateId() =>
         Convert.ToHexString(Guid.NewGuid().ToByteArray())[..10].ToLowerInvariant();
+
+    private static string GenerateToken() =>
+        Convert.ToHexString(Guid.NewGuid().ToByteArray()).ToLowerInvariant();
 }

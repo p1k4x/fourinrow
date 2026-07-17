@@ -8,6 +8,8 @@ public sealed class GameRoom
     public required string Id { get; init; }
     public required string HostName { get; init; }
     public required string GuestName { get; init; }
+    public required string HostJoinToken { get; init; }
+    public required string GuestJoinToken { get; init; }
     public DateTimeOffset CreatedAt { get; init; } = DateTimeOffset.UtcNow;
 
     public string? HostConnectionId { get; set; }
@@ -62,4 +64,11 @@ public sealed record GameStateDto(
 
 public sealed record CreateGameRequest(string HostName, string GuestName);
 
-public sealed record CreateGameResponse(string GameId, string HostName, string GuestName);
+public sealed record CreateGameResponse(
+    string GameId,
+    string HostName,
+    string GuestName,
+    string HostJoinToken,
+    string GuestJoinToken);
+
+public sealed record JoinGameResult(string Seat, string PeerJoinToken);

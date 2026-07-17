@@ -6,30 +6,28 @@ namespace FourInRow.Server.Hubs;
 
 public sealed class GameHub(GameStore store, GameEngine engine) : Hub
 {
-    public async Task JoinGame(string gameId, string playerName)
+    public async Task<JoinGameResult?> JoinGame(string gameId, string joinToken)
     {
         var room = store.Get(gameId);
         if (room is null)
         {
             await Clients.Caller.SendAsync("Error", "Game not found.");
-            return;
+            return null;
         }
 
-        var name = playerName.Trim();
-        var slot = ResolveSlot(room, name);
+        var token = joinToken.Trim();
+        var slot = ResolveSlot(room, token);
         if (slot == PlayerSlot.None)
         {
-            await Clients.Caller.SendAsync(
-                "Error",
-                $"Name must be '{room.HostName}' or '{room.GuestName}'.");
-            return;
+            await Clients.Caller.SendAsync("Error", "Invalid join token.");
+            return null;
         }
 
         var existingConnection = slot == PlayerSlot.Host ? room.HostConnectionId : room.GuestConnectionId;
         if (!string.IsNullOrEmpty(existingConnection) && existingConnection != Context.ConnectionId)
         {
             await Clients.Caller.SendAsync("Error", "That seat is already taken.");
-            return;
+            return null;
         }
 
         if (slot == PlayerSlot.Host)
@@ -49,6 +47,9 @@ public sealed class GameHub(GameStore store, GameEngine engine) : Hub
         }
 
         await Clients.Group(room.Id).SendAsync("GameUpdated", room.ToDto());
+
+        var peerToken = slot == PlayerSlot.Host ? room.GuestJoinToken : room.HostJoinToken;
+        return new JoinGameResult(slot.ToString(), peerToken);
     }
 
     public async Task DropDisc(string gameId, int column)
@@ -102,14 +103,14 @@ public sealed class GameHub(GameStore store, GameEngine engine) : Hub
         await base.OnDisconnectedAsync(exception);
     }
 
-    private static PlayerSlot ResolveSlot(GameRoom room, string name)
+    private static PlayerSlot ResolveSlot(GameRoom room, string token)
     {
-        if (NamesMatch(name, room.HostName))
+        if (TokensMatch(token, room.HostJoinToken))
         {
             return PlayerSlot.Host;
         }
 
-        if (NamesMatch(name, room.GuestName))
+        if (TokensMatch(token, room.GuestJoinToken))
         {
             return PlayerSlot.Guest;
         }
@@ -132,6 +133,6 @@ public sealed class GameHub(GameStore store, GameEngine engine) : Hub
         return PlayerSlot.None;
     }
 
-    private static bool NamesMatch(string a, string b) =>
-        string.Equals(a.Trim(), b.Trim(), StringComparison.OrdinalIgnoreCase);
+    private static bool TokensMatch(string a, string b) =>
+        string.Equals(a.Trim(), b.Trim(), StringComparison.Ordinal);
 }

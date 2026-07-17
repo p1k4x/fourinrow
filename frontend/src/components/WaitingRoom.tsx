@@ -2,11 +2,11 @@ import { useState } from 'react'
 import { GameBoard } from './GameBoard'
 import { useGameHub, type HubStatus } from '../hooks/useGameHub'
 import { inviteUrl } from '../lib/invite'
-import { Cell, type GameState } from '../types/game'
+import { Cell, type GameState, type PlayerSlot } from '../types/game'
 
 type WaitingRoomProps = {
   gameId: string
-  playerName: string
+  joinToken: string
   onBack: () => void
 }
 
@@ -69,11 +69,11 @@ function shouldShowBoard(game: GameState): boolean {
   )
 }
 
-export function WaitingRoom({ gameId, playerName, onBack }: WaitingRoomProps) {
-  const canJoin = playerName.trim().length > 0
-  const { game, status, error, dropDisc } = useGameHub(
+export function WaitingRoom({ gameId, joinToken, onBack }: WaitingRoomProps) {
+  const canJoin = joinToken.trim().length > 0
+  const { game, seat, peerJoinToken, status, error, dropDisc } = useGameHub(
     gameId,
-    playerName.trim(),
+    joinToken.trim(),
     canJoin,
   )
   const [copied, setCopied] = useState(false)
@@ -81,10 +81,10 @@ export function WaitingRoom({ gameId, playerName, onBack }: WaitingRoomProps) {
   if (!canJoin) {
     return (
       <section className="waiting">
-        <h1>Missing name</h1>
+        <h1>Missing invite</h1>
         <p className="lede">
-          Open the invite link that includes your name, or create a new game
-          from the lobby.
+          Open the invite link that includes your seat token, or create a new
+          game from the lobby.
         </p>
         <button type="button" className="btn-secondary" onClick={onBack}>
           Back to lobby
@@ -97,11 +97,10 @@ export function WaitingRoom({ gameId, playerName, onBack }: WaitingRoomProps) {
   const showBoard = !!game && shouldShowBoard(game)
   const bothConnected =
     !!game && game.hostConnected && game.guestConnected
-  const isHost =
-    !!game && playerName.toLowerCase() === game.hostName.toLowerCase()
-  const isGuest =
-    !!game && playerName.toLowerCase() === game.guestName.toLowerCase()
-  const guestInvite = game ? inviteUrl(game.gameId, game.guestName) : ''
+  const isHost = seat === 'Host'
+  const isGuest = seat === 'Guest'
+  const guestInvite =
+    game && peerJoinToken ? inviteUrl(game.gameId, peerJoinToken) : ''
 
   async function copyInvite() {
     if (!guestInvite) return
@@ -129,7 +128,7 @@ export function WaitingRoom({ gameId, playerName, onBack }: WaitingRoomProps) {
         )}
         <GameBoard
           game={game}
-          playerName={playerName}
+          seat={seat}
           onDrop={(column) => void dropDisc(column)}
           disabled={status !== 'connected'}
         />
@@ -148,8 +147,7 @@ export function WaitingRoom({ gameId, playerName, onBack }: WaitingRoomProps) {
       <WaitingHeader
         game={game}
         bothConnected={bothConnected}
-        isHost={isHost}
-        isGuest={isGuest}
+        seat={seat}
         status={status}
       />
 
@@ -182,7 +180,7 @@ export function WaitingRoom({ gameId, playerName, onBack }: WaitingRoomProps) {
             />
           </div>
 
-          {isHost && !bothConnected && (
+          {isHost && !bothConnected && guestInvite && (
             <div className="invite-box">
               <label className="field">
                 <span>Share with {game.guestName}</span>
@@ -219,16 +217,17 @@ export function WaitingRoom({ gameId, playerName, onBack }: WaitingRoomProps) {
 function WaitingHeader({
   game,
   bothConnected,
-  isHost,
-  isGuest,
+  seat,
   status,
 }: {
   game: GameState | null
   bothConnected: boolean
-  isHost: boolean
-  isGuest: boolean
+  seat: PlayerSlot
   status: HubStatus
 }) {
+  const isHost = seat === 'Host'
+  const isGuest = seat === 'Guest'
+
   if (bothConnected) {
     return (
       <>

@@ -5,7 +5,7 @@ import {
   LogLevel,
 } from '@microsoft/signalr'
 import { HUB_URL } from '../config'
-import type { GameState } from '../types/game'
+import type { GameState, JoinGameResult } from '../types/game'
 
 export type GameHubHandlers = {
   onGameUpdated?: (state: GameState) => void
@@ -47,9 +47,9 @@ export async function startHub(connection: HubConnection): Promise<void> {
 export async function joinGame(
   connection: HubConnection,
   gameId: string,
-  playerName: string,
-): Promise<void> {
-  await connection.invoke('JoinGame', gameId, playerName)
+  joinToken: string,
+): Promise<JoinGameResult | null> {
+  return (await connection.invoke('JoinGame', gameId, joinToken)) as JoinGameResult | null
 }
 
 export async function dropDisc(

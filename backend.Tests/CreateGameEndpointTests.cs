@@ -15,7 +15,7 @@ public class CreateGameEndpointTests : IClassFixture<WebApplicationFactory<Progr
     }
 
     [Fact]
-    public async Task Post_api_games_creates_room()
+    public async Task Post_api_games_creates_room_with_distinct_join_tokens()
     {
         var response = await _client.PostAsJsonAsync(
             "/api/games",
@@ -28,6 +28,9 @@ public class CreateGameEndpointTests : IClassFixture<WebApplicationFactory<Progr
         Assert.False(string.IsNullOrWhiteSpace(body.GameId));
         Assert.Equal("Alice", body.HostName);
         Assert.Equal("Bob", body.GuestName);
+        Assert.False(string.IsNullOrWhiteSpace(body.HostJoinToken));
+        Assert.False(string.IsNullOrWhiteSpace(body.GuestJoinToken));
+        Assert.NotEqual(body.HostJoinToken, body.GuestJoinToken);
         Assert.Contains($"/api/games/{body.GameId}", response.Headers.Location?.ToString());
     }
 
