@@ -39,6 +39,8 @@ public sealed class GameHub(GameStore store, GameEngine engine) : Hub
             room.GuestConnectionId = Context.ConnectionId;
         }
 
+        room.Touch();
+
         await Groups.AddToGroupAsync(Context.ConnectionId, room.Id);
 
         if (room.BothPlayersConnected && room.Status == GameStatus.WaitingForPlayers)
@@ -75,6 +77,7 @@ public sealed class GameHub(GameStore store, GameEngine engine) : Hub
             return;
         }
 
+        room.Touch();
         await Clients.Group(room.Id).SendAsync("GameUpdated", room.ToDto());
     }
 

@@ -52,7 +52,7 @@ Each seat needs its own browser session (two windows of the same browser will sh
 
 When both seats show connected, the 6×7 board appears. Click a column to drop a disc. Turns, wins, and draws update live.
 
-Rooms are in-memory only — restarting the backend clears all games.
+Rooms are in-memory only — restarting the backend clears all games. Idle waiting/in-progress rooms expire after **2 hours**; finished games (win/draw) expire after **15 minutes**.
 
 ---
 

@@ -10,13 +10,16 @@ public sealed class GameStore
     public GameRoom Create(string hostName, string guestName)
     {
         var id = GenerateId();
+        var now = DateTimeOffset.UtcNow;
         var room = new GameRoom
         {
             Id = id,
             HostName = hostName.Trim(),
             GuestName = guestName.Trim(),
             HostJoinToken = GenerateToken(),
-            GuestJoinToken = GenerateToken()
+            GuestJoinToken = GenerateToken(),
+            CreatedAt = now,
+            LastActivityAt = now
         };
 
         if (!_games.TryAdd(id, room))
@@ -27,8 +30,42 @@ public sealed class GameStore
         return room;
     }
 
-    public GameRoom? Get(string gameId) =>
-        _games.TryGetValue(gameId, out var room) ? room : null;
+    public GameRoom? Get(string gameId)
+    {
+        if (!_games.TryGetValue(gameId, out var room))
+        {
+            return null;
+        }
+
+        if (room.IsExpired(DateTimeOffset.UtcNow))
+        {
+            _games.TryRemove(gameId, out _);
+            return null;
+        }
+
+        return room;
+    }
+
+    public int RemoveExpired(DateTimeOffset? utcNow = null)
+    {
+        var now = utcNow ?? DateTimeOffset.UtcNow;
+        // Snapshot before remove — Values is not a moment-in-time view under concurrent writes.
+        var expiredIds = _games
+            .Where(pair => pair.Value.IsExpired(now))
+            .Select(pair => pair.Key)
+            .ToArray();
+
+        var removed = 0;
+        foreach (var id in expiredIds)
+        {
+            if (_games.TryRemove(id, out _))
+            {
+                removed++;
+            }
+        }
+
+        return removed;
+    }
 
     public IEnumerable<GameRoom> All() => _games.Values;
 

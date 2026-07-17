@@ -5,12 +5,19 @@ public sealed class GameRoom
     public const int Rows = 6;
     public const int Columns = 7;
 
+    /// <summary>Idle timeout for waiting / in-progress rooms.</summary>
+    public static readonly TimeSpan ActiveTtl = TimeSpan.FromHours(2);
+
+    /// <summary>Idle timeout after a win or draw — shorter so finished rooms leave memory sooner.</summary>
+    public static readonly TimeSpan EndedTtl = TimeSpan.FromMinutes(15);
+
     public required string Id { get; init; }
     public required string HostName { get; init; }
     public required string GuestName { get; init; }
     public required string HostJoinToken { get; init; }
     public required string GuestJoinToken { get; init; }
     public DateTimeOffset CreatedAt { get; init; } = DateTimeOffset.UtcNow;
+    public DateTimeOffset LastActivityAt { get; set; } = DateTimeOffset.UtcNow;
 
     public string? HostConnectionId { get; set; }
     public string? GuestConnectionId { get; set; }
@@ -24,6 +31,17 @@ public sealed class GameRoom
 
     public bool BothPlayersConnected =>
         !string.IsNullOrEmpty(HostConnectionId) && !string.IsNullOrEmpty(GuestConnectionId);
+
+    public bool IsEnded =>
+        Status is GameStatus.HostWon or GameStatus.GuestWon or GameStatus.Draw;
+
+    public TimeSpan Ttl => IsEnded ? EndedTtl : ActiveTtl;
+
+    public bool IsExpired(DateTimeOffset utcNow) =>
+        utcNow - LastActivityAt >= Ttl;
+
+    public void Touch(DateTimeOffset? utcNow = null) =>
+        LastActivityAt = utcNow ?? DateTimeOffset.UtcNow;
 
     public GameStateDto ToDto() => new(
         Id,

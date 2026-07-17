@@ -6,6 +6,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddSingleton<GameStore>();
 builder.Services.AddSingleton<GameEngine>();
+builder.Services.AddHostedService<GameCleanupService>();
 builder.Services.AddSignalR();
 
 builder.Services.AddCors(options =>
